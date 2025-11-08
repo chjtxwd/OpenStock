@@ -1,0 +1,34 @@
+name: Release
+
+on:
+  release:
+    types: [published]
+    branches: [master]
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Login to GitHub Container Registry
+        uses: docker/login-action@v3
+        with:
+          registry: ghcr.io
+          username: ${{ github.actor }}
+          password: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Create build context
+        run: |
+          docker context create ${{ github.sha }}
+
+      - name: Set up Docker Buildx
+        uses: docker/setup-buildx-action@v2.10.0
+        with:
+          endpoint: ${{ github.sha }}
+
+      - name: Build and Push Image
+        uses: docker/build-push-action@v5.0.0
+        with:
+          file: Dockerfile.npc
+          tags: ghcr.io/chjtxwd/openstock:latest
+          platforms: linux/amd64,linux/arm64
+          push: true
